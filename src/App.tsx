@@ -1,9 +1,9 @@
 import { useEffect } from "react";
-import { eventBus } from "./core/eventBus";
-import { RuntimeProvider } from "./components/providers/RuntimeProvider";
-import { WorkspaceDashboard } from "./components/layout/WorkspaceDashboard";
-import { ProjectDashboard } from "./components/layout/ProjectDashboard";
-import { useProjectStore } from "./store/projectStore";
+import { eventBus } from "./shared/core/eventBus";
+import { RuntimeProvider } from "./ui/components/providers/RuntimeProvider";
+import { WorkspaceDashboard } from "./ui/components/layout/WorkspaceDashboard";
+import { ProjectDashboard } from "./ui/components/layout/ProjectDashboard";
+import { useProjectStore } from "./ui/stores/projectStore";
 import "./App.css";
 
 function AppContent() {
