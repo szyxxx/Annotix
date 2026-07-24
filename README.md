@@ -16,13 +16,13 @@ Unlike web-based tools that struggle with massive datasets or require complex cl
 
 ### Why Annotix?
 
-| Feature | Annotix | Web-Based Tools (CVAT / Label Studio) |
-| ------- | ------- | ------------------------------------- |
-| **Architecture** | Native Desktop (Tauri + Rust) | Web Service / Docker required |
-| **Connectivity** | 100% Offline | Requires server / network connection |
-| **Performance** | Native File I/O & WebGPU | Browser Sandbox Constraints |
-| **Data Privacy** | Stays on your disk | Uploads required (S3/Cloud) |
-| **Extensibility** | WebAssembly Plugins (Coming) | Custom Python backends |
+| Feature | Annotix | CVAT | Label Studio |
+| ------- | ------- | ---- | ------------ |
+| **Architecture** | Native Desktop (Tauri + Rust) | Web Service / Docker | Web Service / Docker |
+| **Connectivity** | 100% Offline | Requires Server | Requires Server |
+| **Performance** | Native File I/O & WebGPU | Browser Sandbox | Browser Sandbox |
+| **Data Privacy** | Stays on your disk | Uploads required | Uploads required |
+| **Extensibility** | WebAssembly Plugins (Coming) | Python backends | Python backends |
 
 ---
 
@@ -109,8 +109,8 @@ For more details on our architectural decisions, see our [Architecture Decision 
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/annotix.git
-   cd annotix
+   git clone https://github.com/szyxxx/Annotix.git
+   cd Annotix
    ```
 
 2. **Install dependencies**
@@ -135,4 +135,4 @@ Check out our issues labeled `good first issue` or `help wanted` to get started.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
