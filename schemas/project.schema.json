@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Annotix Project Schema",
+  "type": "object",
+  "required": ["schema_version", "id", "name", "created_at", "dataset", "history", "settings"],
+  "properties": {
+    "schema_version": { "type": "integer", "enum": [1] },
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "created_at": { "type": "integer" },
+    "dataset": {
+      "type": "object",
+      "properties": {
+        "classes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "color"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "color": { "type": "string" },
+              "shortcut": { "type": ["string", "null"] },
+              "parent": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "history": { "type": "object" },
+    "settings": { "type": "object" }
+  }
+}
