@@ -1,32 +1,28 @@
 # Contributing to Annotix
 
-First off, thank you for considering contributing to Annotix! It's people like you that make Annotix such a great tool.
+Thanks for helping make Annotix better! Bug reports, feature ideas, and pull
+requests are all welcome.
 
-## Where do I go from here?
+## Getting set up
 
-If you've noticed a bug or have a feature request, make one! It's generally best if you get confirmation of your bug or approval for your feature request this way before starting to code.
+You need Rust, Node 20+, and (only for auto-labeling) [uv](https://docs.astral.sh/uv/).
 
-## Fork & create a branch
+```sh
+cd server && cargo run          # API on :8000
+cd frontend && npm install && npm run dev   # UI on :5173, proxies to :8000
+cd ml && uv sync && uv run uvicorn main:app --port 8100   # optional sidecar
+```
 
-If this is something you think you can fix, then fork Annotix and create a branch with a descriptive name.
+Run the tests with `cd server && cargo test` and the type-check with
+`cd frontend && npm run build`.
 
-## Get the test suite running
+## Making a change
 
-Make sure you have `Node.js`, `Rust` (Cargo), and `uv` installed.
-Run `npm install` and `npm run tauri dev`.
-
-## Implement your fix or feature
-
-At this point, you're ready to make your changes. Feel free to ask for help; everyone is a beginner at first.
-
-## Pull Request Requirements
-
-We enforce strict rules for merging Pull Requests to maintain our high architectural standards:
-
-1. **Milestone Tagging**: Every PR description must explicitly state which milestone it targets (e.g., `Milestone: M2.1`).
-2. **Vertical Slice**: Features must be implemented as a Vertical Slice (UI -> Runtime -> Service -> Repository -> Storage). Partial implementations (e.g., "just the database layer") will be rejected.
-3. **Architecture Freeze**: We are in **Architecture Freeze v1**. Do not introduce new abstractions, registries, managers, or architectural layers without an approved RFC and ADR. Focus purely on product capabilities.
-4. **Testing**: Tests matching our [Testing Strategy](docs/engineering/testing-strategy.md) must be included.
-
-At this point, you should switch back to your master branch and make sure it's up to date with Annotix's master branch.
-Then create a pull request.
+1. Open an issue first for anything non-trivial, so we can agree on the approach.
+2. Fork, branch, make the change — smallest diff that solves the problem wins.
+3. Keep the codebase boring: standard library and existing patterns before new
+   dependencies or abstractions. See [docs/PLAN.md](docs/PLAN.md) for the
+   architecture and its deliberate MVP ceilings.
+4. Add or update a test when you touch non-trivial logic (export math, API
+   behavior, canvas geometry).
+5. Open a pull request describing what changed and why.

@@ -1,67 +1,124 @@
-# Annotix
+<div align="center">
 
-Open-source, web-based image annotation for building YOLO datasets — in the
-spirit of Roboflow and Label Studio, self-hosted and free.
+# `[ · ]` Annotix
 
-- **Bounding boxes & polygon segmentation** in a fast, keyboard-driven editor
-- **Auto-labeling** with a baseline YOLO11 model (boxes *and* masks) — one keypress pre-labels an image
-- **Team collaboration** — live presence, per-image activity, instant updates over WebSocket
-- **Project & dataset management** — uploads, train/val/test splits, statuses, search
-- **Export** to YOLO (v5 → v11 → YOLO26, detect & segment) and COCO JSON
+**Open-source image annotation for YOLO — with auto-labeling built in.**
+
+Draw boxes and polygons, label together in real time, press <kbd>A</kbd> to let a
+baseline model pre-label for you, and export straight to YOLO (v5 → v11 → YOLO26)
+or COCO. Self-hosted, one binary, no accounts to create.
+
+[![CI](https://github.com/szyxxx/Annotix/actions/workflows/ci.yml/badge.svg)](https://github.com/szyxxx/Annotix/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Rust](https://img.shields.io/badge/backend-Rust-orange.svg)](server)
+[![React](https://img.shields.io/badge/frontend-React%2019-61dafb.svg)](frontend)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+<img src=".github/assets/editor.png" alt="Annotix annotation editor with auto-labeled bounding boxes" width="900" />
+
+</div>
+
+## Why Annotix
+
+Tools like Roboflow are excellent but hosted and metered; Label Studio is
+flexible but heavy to run. Annotix is the small, fast middle: a **single Rust
+binary** that serves the UI, API, and your data from one folder on your own
+machine — plus an optional Python sidecar that auto-labels images with a YOLO11
+baseline model so you start from predictions instead of a blank canvas.
+
+## Features
+
+- 🎯 **Bounding boxes & polygon segmentation** — fast SVG editor with zoom/pan, vertex editing, and keyboard-first workflow
+- ✨ **Auto-labeling** — one keypress runs a baseline YOLO11 model (boxes *and* masks), auto-creates classes, and queues the image for review
+- 👥 **Real-time collaboration** — live presence avatars, "who's editing what", instant updates over WebSocket; teammates just open your URL
+- 🗂️ **Project & dataset management** — multi-file upload, train/val/test splits with one-click auto-split (70/20/10), statuses, filename search
+- 📦 **Export that trains** — YOLO detect & segment (`data.yaml` + normalized `.txt`, the format shared by YOLOv5 through YOLO11 and YOLO26) and COCO JSON, zipped per split
+- 🪶 **Zero-infra self-hosting** — SQLite + local disk in `data/`, no external services, Apache-2.0
+
+<table>
+  <tr>
+    <td><img src=".github/assets/projects.png" alt="Projects dashboard" /></td>
+    <td><img src=".github/assets/dataset.png" alt="Dataset grid with splits and statuses" /></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Projects dashboard</sub></td>
+    <td align="center"><sub>Dataset management — splits, statuses, search</sub></td>
+  </tr>
+</table>
+
+## Quick start
+
+### Docker (easiest)
+
+```sh
+git clone https://github.com/szyxxx/Annotix.git && cd Annotix
+docker compose up --build
+```
+
+Open **http://localhost:8000** — that's it. Add auto-labeling (a ~2 GB
+PyTorch-CPU image) with:
+
+```sh
+docker compose --profile ml up --build
+```
+
+### From source
+
+Prerequisites: [Rust](https://rustup.rs), [Node 20+](https://nodejs.org), and
+(only for auto-labeling) [uv](https://docs.astral.sh/uv/).
+
+```sh
+# UI + server → http://localhost:8000
+cd frontend && npm install && npm run build
+cd ../server && cargo run --release
+
+# optional: auto-label sidecar (first prediction downloads ~6 MB of weights)
+cd ../ml && uv sync && uv run uvicorn main:app --port 8100
+```
+
+Then open http://localhost:8000, claim a display name, create a project, drop
+images in, and annotate. Teammates on your network open the same URL and appear
+in the presence bar.
+
+## The workflow
+
+1. **Create a project** — bounding boxes or segmentation.
+2. **Upload images** — drag & drop; splits default to `train`, auto-split anytime.
+3. **Annotate** — or press <kbd>A</kbd> and review what the model found.
+4. **Export** — a zip you can point Ultralytics at directly:
+
+```sh
+yolo train data=path/to/export/data.yaml model=yolo11n.pt
+```
+
+## Editor shortcuts
+
+| Key | Action | Key | Action |
+|-----|--------|-----|--------|
+| <kbd>B</kbd> | Box tool | <kbd>A</kbd> | Auto-label |
+| <kbd>P</kbd> | Polygon tool | <kbd>Del</kbd> | Delete selected |
+| <kbd>V</kbd> | Select / edit | <kbd>←</kbd> <kbd>→</kbd> | Prev / next image (auto-saves) |
+| <kbd>H</kbd> / <kbd>Space</kbd> | Pan | <kbd>Ctrl+S</kbd> | Save |
+| <kbd>1–9</kbd> | Pick class | scroll | Zoom |
 
 ## Architecture
 
 | Directory | What it is |
 |-----------|------------|
-| `frontend/` | React 19 + Vite + Tailwind v4 UI |
-| `server/` | Rust (Axum + SQLite) — API, WebSocket hub, file storage, export. One static binary; serves the built frontend too |
-| `ml/` | Python (FastAPI + ultralytics) auto-label sidecar — optional; everything else works without it |
+| [`frontend/`](frontend) | React 19 + Vite + Tailwind v4 |
+| [`server/`](server) | Rust (Axum + SQLite) — API, WebSocket hub, storage, export. Serves the built UI too |
+| [`ml/`](ml) | Python (FastAPI + ultralytics) auto-label sidecar — optional |
 
-Data lives on disk in `data/` (SQLite + uploaded images). No external services.
-See [docs/PLAN.md](docs/PLAN.md) for the full design.
+Design details, API surface, and deliberate MVP trade-offs: [docs/PLAN.md](docs/PLAN.md).
 
-## Run it
+## Roadmap
 
-Prerequisites: Rust, Node 20+, and (for auto-labeling) [uv](https://docs.astral.sh/uv/).
+Dataset versioning & snapshots · review/approve workflow · training jobs ·
+augmentation on export · real auth & orgs · S3 storage · active learning
+(train on approved labels → auto-label the rest with your own model).
 
-```sh
-# 1. build the frontend once
-cd frontend && npm install && npm run build
-
-# 2. run the server — serves UI + API at http://localhost:8000
-cd ../server && cargo run
-
-# 3. (optional) auto-label sidecar — first prediction downloads model weights
-cd ../ml && uv sync && uv run uvicorn main:app --port 8100
-```
-
-Open http://localhost:8000, claim a display name, create a project, upload
-images, annotate. Teammates on your network do the same URL and you see each
-other live.
-
-### Development
-
-```sh
-cd server && cargo run          # API on :8000
-cd frontend && npm run dev      # Vite dev server on :5173, proxies /api, /files, /ws
-```
-
-Config via env vars: `ANNOTIX_PORT` (8000), `ANNOTIX_DATA_DIR` (`data`),
-`ANNOTIX_ML_URL` (`http://localhost:8100`).
-
-## Editor shortcuts
-
-`B` box · `P` polygon · `V` select · `H` pan · `1–9` pick class · `A` auto-label ·
-`Del` delete · `←`/`→` prev/next image (auto-saves) · `Ctrl+S` save ·
-scroll to zoom · space-drag to pan · `Enter`/double-click closes a polygon
-
-## Status & roadmap
-
-MVP — the core loop (upload → annotate → auto-label → export → train) is
-complete and tested. Deliberate ceilings and what's next (dataset versioning,
-training jobs, review workflow, real auth, S3, active learning) are tracked in
-[docs/PLAN.md](docs/PLAN.md).
+Contributions welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-Apache-2.0
+[Apache-2.0](LICENSE)

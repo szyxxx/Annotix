@@ -1,0 +1,21 @@
+name: Bug report
+description: Something in Annotix doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a segmentation project
+        2. Upload an image and press A
+        3. ...
+  - type: input
+    attributes:
+      label: Setup
+      placeholder: "e.g. Docker on Ubuntu 24.04 / from source on Windows 11"

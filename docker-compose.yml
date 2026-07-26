@@ -1,0 +1,19 @@
+services:
+  annotix:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/data
+    environment:
+      ANNOTIX_ML_URL: http://ml:8100
+
+  # Auto-label sidecar (~2 GB image: PyTorch CPU + YOLO).
+  # Start with:  docker compose --profile ml up
+  ml:
+    build: ml
+    profiles: ["ml"]
+    ports:
+      - "8100:8100"
+    volumes:
+      - ./data:/data # shares uploaded images with the server
