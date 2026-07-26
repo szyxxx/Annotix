@@ -1,138 +1,67 @@
-<div align="center">
-  <img src="public/annotix.png" alt="Annotix Logo" width="200"/>
-  <h1>Annotix</h1>
-  <p><strong>The Open-Source, Offline-First Computer Vision Dataset Platform</strong></p>
-</div>
+# Annotix
 
-<br />
+Open-source, web-based image annotation for building YOLO datasets — in the
+spirit of Roboflow and Label Studio, self-hosted and free.
 
-![Annotix Demo](https://via.placeholder.com/1200x600/18181b/ffffff?text=Annotix+Demo+GIF+Coming+Soon)
+- **Bounding boxes & polygon segmentation** in a fast, keyboard-driven editor
+- **Auto-labeling** with a baseline YOLO11 model (boxes *and* masks) — one keypress pre-labels an image
+- **Team collaboration** — live presence, per-image activity, instant updates over WebSocket
+- **Project & dataset management** — uploads, train/val/test splits, statuses, search
+- **Export** to YOLO (v5 → v11 → YOLO26, detect & segment) and COCO JSON
 
-## What is Annotix?
+## Architecture
 
-> Existing annotation tools are either cloud-first, heavyweight, or difficult to extend. Annotix is designed as an offline-first, plugin-driven desktop platform that gives researchers and AI engineers full control over their datasets and annotation workflows.
+| Directory | What it is |
+|-----------|------------|
+| `frontend/` | React 19 + Vite + Tailwind v4 UI |
+| `server/` | Rust (Axum + SQLite) — API, WebSocket hub, file storage, export. One static binary; serves the built frontend too |
+| `ml/` | Python (FastAPI + ultralytics) auto-label sidecar — optional; everything else works without it |
 
-Annotix is a next-generation desktop application designed to manage, annotate, and process computer vision datasets locally, leveraging your native hardware.
+Data lives on disk in `data/` (SQLite + uploaded images). No external services.
+See [docs/PLAN.md](docs/PLAN.md) for the full design.
 
-### Why Annotix?
+## Run it
 
-| Feature | Annotix | CVAT | Label Studio |
-| ------- | ------- | ---- | ------------ |
-| **Architecture** | Native Desktop (Tauri + Rust) | Web Service / Docker | Web Service / Docker |
-| **Connectivity** | 100% Offline | Requires Server | Requires Server |
-| **Performance** | Native File I/O & WebGPU | Browser Sandbox | Browser Sandbox |
-| **Data Privacy** | Stays on your disk | Uploads required | Uploads required |
-| **Extensibility** | WebAssembly Plugins (Coming) | Python backends | Python backends |
+Prerequisites: Rust, Node 20+, and (for auto-labeling) [uv](https://docs.astral.sh/uv/).
 
----
+```sh
+# 1. build the frontend once
+cd frontend && npm install && npm run build
 
-## Key Features
+# 2. run the server — serves UI + API at http://localhost:8000
+cd ../server && cargo run
 
-* **Offline First:** Your data never leaves your machine. No cloud uploads, no S3 buckets required.
-* **Native Desktop:** Built with Tauri, Rust, and React for native OS integration and blistering speed.
-* **Smart Asset Pipeline:** Ingest, deduplicate (SHA-256), and generate optimized WebP thumbnails automatically.
-* **AI Assisted (Roadmap):** Local inference via ONNX and WebNN for zero-latency bounding boxes and segmentation.
-* **Plugin System (Roadmap):** Extend capabilities via secure WebAssembly plugins.
-
----
-
-## Screenshots
-
-### Workspace & Project Management
-![Workspace](https://via.placeholder.com/800x450/18181b/ffffff?text=Workspace+Dashboard)
-
-### Dataset Pipeline
-![Dataset](https://via.placeholder.com/800x450/18181b/ffffff?text=Dataset+Ingestion+Pipeline)
-
-*Canvas and AI Assisted annotation coming soon.*
-
----
-
-## Roadmap
-
-Annotix is actively developed with a clear progression path to v1.0.0.
-
-- [x] **v0.1.0 Workspace Platform:** Core domain-driven design, local event bus, Rust/Tauri storage providers.
-- [ ] **v0.2.0 Dataset & Asset Pipeline:** Granular import events, thumbnail generation, hash-based caching, robust grid views. *(Current Focus)*
-- [ ] **v0.3.0 Canvas Engine:** WebGL/Canvas2D high-performance rendering for images and annotations.
-- [ ] **v0.4.0 Annotation Tools:** Bounding boxes, polygons, keypoints, masks.
-- [ ] **v0.5.0 AI Assist:** Local GroundingDINO/YOLO inference integration.
-- [ ] **v0.6.0 Training & Export:** Export pipelines for YOLO, COCO, Pascal VOC.
-- [ ] **v1.0.0 Production Release:** Plugin SDK, benchmarks, and stable API.
-
----
-
-## Architecture Overview
-
-Annotix follows a strict **Hexagonal Architecture (Ports and Adapters)** mixed with **Domain-Driven Design (DDD)**. 
-
-```mermaid
-graph TD
-    subgraph "Presentation Layer (React)"
-        UI[React Components]
-        Store[Zustand Stores]
-    end
-
-    subgraph "Application Runtime (TypeScript)"
-        RT[ApplicationRuntime]
-        Events[Event Bus]
-        Services[Domain Services]
-    end
-
-    subgraph "Infrastructure (Tauri / Rust)"
-        TauriFS[TauriStorageProvider]
-        TauriProj[TauriProjectRepository]
-        TauriDB[SQLite / Key-Value]
-    end
-
-    UI --> |Commands| RT
-    Store <--> |Listens| Events
-    RT --> Services
-    Services --> |Emits| Events
-    Services --> |Uses Ports| TauriFS
-    Services --> |Uses Ports| TauriProj
+# 3. (optional) auto-label sidecar — first prediction downloads model weights
+cd ../ml && uv sync && uv run uvicorn main:app --port 8100
 ```
 
-For more details on our architectural decisions, see our [Architecture Decision Records (ADR)](docs/adr).
+Open http://localhost:8000, claim a display name, create a project, upload
+images, annotate. Teammates on your network do the same URL and you see each
+other live.
 
----
+### Development
 
-## Getting Started
+```sh
+cd server && cargo run          # API on :8000
+cd frontend && npm run dev      # Vite dev server on :5173, proxies /api, /files, /ws
+```
 
-### Prerequisites
+Config via env vars: `ANNOTIX_PORT` (8000), `ANNOTIX_DATA_DIR` (`data`),
+`ANNOTIX_ML_URL` (`http://localhost:8100`).
 
-* [Node.js](https://nodejs.org/) (v18+)
-* [Rust](https://www.rust-lang.org/tools/install) (latest stable)
-* Tauri Prerequisites (depending on your OS)
+## Editor shortcuts
 
-### Installation
+`B` box · `P` polygon · `V` select · `H` pan · `1–9` pick class · `A` auto-label ·
+`Del` delete · `←`/`→` prev/next image (auto-saves) · `Ctrl+S` save ·
+scroll to zoom · space-drag to pan · `Enter`/double-click closes a polygon
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/szyxxx/Annotix.git
-   cd Annotix
-   ```
+## Status & roadmap
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Run in development mode**
-   ```bash
-   npm run tauri dev
-   ```
-
----
-
-## Contributing
-
-We are building Annotix for the open-source community, and we'd love your help! 
-
-Please read our [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, development environment setup, and the process for submitting pull requests.
-
-Check out our issues labeled `good first issue` or `help wanted` to get started.
+MVP — the core loop (upload → annotate → auto-label → export → train) is
+complete and tested. Deliberate ceilings and what's next (dataset versioning,
+training jobs, review workflow, real auth, S3, active learning) are tracked in
+[docs/PLAN.md](docs/PLAN.md).
 
 ## License
 
-This project is licensed under the Apache-2.0 License - see the [LICENSE](LICENSE) file for details.
+Apache-2.0

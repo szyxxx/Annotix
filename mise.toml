@@ -1,8 +1,0 @@
-[tools]
-node = "20"
-python = "3.11"
-rust = "1.75"
-uv = "latest"
-
-[env]
-RUST_BACKTRACE = "1"
