@@ -10,9 +10,9 @@
 
 ## What is Annotix?
 
-Annotix is a next-generation desktop application designed for AI/ML engineers, data scientists, and researchers to manage, annotate, and process computer vision datasets. 
+> Existing annotation tools are either cloud-first, heavyweight, or difficult to extend. Annotix is designed as an offline-first, plugin-driven desktop platform that gives researchers and AI engineers full control over their datasets and annotation workflows.
 
-Unlike web-based tools that struggle with massive datasets or require complex cloud deployments, Annotix runs natively on your machine, leveraging local hardware and true offline-first capabilities.
+Annotix is a next-generation desktop application designed to manage, annotate, and process computer vision datasets locally, leveraging your native hardware.
 
 ### Why Annotix?
 

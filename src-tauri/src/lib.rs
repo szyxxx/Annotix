@@ -61,11 +61,16 @@ async fn run_ai_pipeline(
 pub fn run() {
     // Start Python Worker
     // Note: In production, the path will need to be resolved correctly.
-    // For local dev, we run `uv run worker.py` from the backend directory.
+    // For local dev, we use CARGO_MANIFEST_DIR to locate the backend reliably.
+    let backend_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("CARGO_MANIFEST_DIR should have a parent")
+        .join("backend");
+
     let child_res = Command::new("uv")
         .arg("run")
         .arg("worker.py")
-        .current_dir("../backend") // Run inside the backend directory to use its pyproject.toml
+        .current_dir(backend_dir) // Run inside the backend directory to use its pyproject.toml
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn();
