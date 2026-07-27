@@ -65,11 +65,26 @@ def predict(req: PredictRequest):
     classes = tuple(c.strip() for c in req.classes if c.strip())
 
     with _lock:
-        try:
-            model = get_open_model(classes) if classes else get_baseline(req.task)
-        except Exception:
-            # open-vocab model unavailable (offline, old ultralytics) —
-            # baseline still works; the server filters by class name.
+        if classes:
+            try:
+                model = get_open_model(classes)
+            except Exception as err:
+                # Open-vocab model unavailable (missing CLIP dep, offline).
+                # The COCO baseline can still serve classes it knows; anything
+                # else would silently return nothing, so fail loudly instead.
+                baseline = get_baseline(req.task)
+                known = {str(n).lower() for n in baseline.names.values()}
+                if not any(c.lower() in known for c in classes):
+                    raise HTTPException(
+                        503,
+                        "Open-vocabulary model unavailable "
+                        f"({type(err).__name__}: {err}) and none of the project "
+                        "classes exist in the COCO baseline. Rebuild the ml image "
+                        "(docker compose --profile ml build) or run: "
+                        "pip install git+https://github.com/ultralytics/CLIP.git",
+                    )
+                model = baseline
+        else:
             model = get_baseline(req.task)
         try:
             result = model(req.image_path, conf=req.conf, verbose=False)[0]

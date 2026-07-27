@@ -55,8 +55,8 @@ git clone https://github.com/szyxxx/Annotix.git && cd Annotix
 docker compose up --build
 ```
 
-Open **http://localhost:8000** — that's it. Add auto-labeling (a ~2 GB
-PyTorch-CPU image) with:
+Open **http://localhost:8000** — that's it. Add auto-labeling (a ~1.2 GB
+PyTorch-CPU image with all model weights baked in — no runtime downloads) with:
 
 ```sh
 docker compose --profile ml up --build
