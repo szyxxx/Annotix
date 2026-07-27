@@ -28,8 +28,8 @@ baseline model so you start from predictions instead of a blank canvas.
 
 ## Features
 
-- 🎯 **Bounding boxes & polygon segmentation** — fast SVG editor with zoom/pan, vertex editing, and keyboard-first workflow
-- ✨ **Auto-labeling** — one keypress runs a baseline YOLO11 model (boxes *and* masks), auto-creates classes, and queues the image for review
+- 🎯 **Bounding boxes & polygon segmentation** — fast SVG editor with zoom/pan, vertex editing, class reassignment, and keyboard-first workflow
+- ✨ **Class-locked auto-labeling** — the model is prompted with *your* class list (open-vocabulary YOLOE), so it looks for exactly your classes — any nameable object, not just COCO's 80. No classes yet? It bootstraps them from what it finds. One image (<kbd>A</kbd>) or the whole dataset in one click, and editing the class list re-labels automatically — human-annotated images are never touched
 - 👥 **Real-time collaboration** — live presence avatars, "who's editing what", instant updates over WebSocket; teammates just open your URL
 - 🗂️ **Project & dataset management** — multi-file upload, train/val/test splits with one-click auto-split (70/20/10), statuses, filename search
 - 📦 **Export that trains** — YOLO detect & segment (`data.yaml` + normalized `.txt`, the format shared by YOLOv5 through YOLO11 and YOLO26) and COCO JSON, zipped per split
@@ -72,7 +72,8 @@ Prerequisites: [Rust](https://rustup.rs), [Node 20+](https://nodejs.org), and
 cd frontend && npm install && npm run build
 cd ../server && cargo run --release
 
-# optional: auto-label sidecar (first prediction downloads ~6 MB of weights)
+# optional: auto-label sidecar
+# (first class-locked prediction downloads model weights + text encoder, ~600 MB, once)
 cd ../ml && uv sync && uv run uvicorn main:app --port 8100
 ```
 
@@ -83,9 +84,13 @@ in the presence bar.
 ## The workflow
 
 1. **Create a project** — bounding boxes or segmentation.
-2. **Upload images** — drag & drop; splits default to `train`, auto-split anytime.
-3. **Annotate** — or press <kbd>A</kbd> and review what the model found.
-4. **Export** — a zip you can point Ultralytics at directly:
+2. **Add your classes** — auto-label locks onto exactly these names (e.g. `helmet`,
+   `forklift`, `pallet`), thanks to an open-vocabulary model. Skip this and it
+   bootstraps classes from whatever it detects.
+3. **Upload images** — drag & drop; splits default to `train`, auto-split anytime.
+4. **Auto-label all** — then review and fix, instead of drawing from scratch.
+   Update the class list later and unreviewed images re-label themselves.
+5. **Export** — a zip you can point Ultralytics at directly:
 
 ```sh
 yolo train data=path/to/export/data.yaml model=yolo11n.pt

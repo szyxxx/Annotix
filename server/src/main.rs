@@ -8,6 +8,7 @@ use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
 use axum::Router;
 use rusqlite::Connection;
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tower_http::cors::CorsLayer;
@@ -19,6 +20,8 @@ pub struct App {
     pub hub: ws::Hub,
     pub data_dir: PathBuf,
     pub ml_url: String,
+    /// Projects with a batch auto-label job in flight (one per project at a time).
+    pub autolabel_jobs: Mutex<HashSet<String>>,
 }
 
 fn env_or(key: &str, default: &str) -> String {
@@ -34,7 +37,10 @@ async fn main() {
         db: Mutex::new(db::open(data_dir.join("annotix.db").to_str().unwrap())),
         hub: ws::Hub::default(),
         data_dir: data_dir.clone(),
-        ml_url: env_or("ANNOTIX_ML_URL", "http://localhost:8100"),
+        // 127.0.0.1, not localhost: on Windows "localhost" can resolve to ::1
+        // where a stale Docker/WSL relay may be listening.
+        ml_url: env_or("ANNOTIX_ML_URL", "http://127.0.0.1:8100"),
+        autolabel_jobs: Mutex::new(HashSet::new()),
     });
 
     // Built frontend, when present (production). In dev, Vite serves the UI and proxies here.
@@ -62,6 +68,7 @@ async fn main() {
             get(api::get_annotations).put(api::put_annotations),
         )
         .route("/api/images/{id}/autolabel", post(autolabel::autolabel_image))
+        .route("/api/projects/{id}/autolabel", post(autolabel::autolabel_project))
         .route("/api/projects/{id}/export", get(export::export_project))
         .route("/ws/projects/{id}", get(ws::ws_handler))
         .nest_service("/files", ServeDir::new(data_dir.join("uploads")))

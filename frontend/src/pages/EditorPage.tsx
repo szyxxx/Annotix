@@ -14,7 +14,7 @@ import {
 import { api, type Annotation, type ImageItem, type Label, type Project } from "../lib/api";
 import { useSession } from "../lib/store";
 import { useProjectSocket } from "../lib/ws";
-import { Button, ClassChip, PresenceAvatars, Spinner } from "../components/ui";
+import { Button, PresenceAvatars, Spinner } from "../components/ui";
 
 type Tool = "select" | "bbox" | "polygon" | "pan";
 type View = { x: number; y: number; scale: number };
@@ -141,6 +141,10 @@ export function EditorPage() {
   const deleteAnn = (i: number) => {
     setAnns((a) => a.filter((_, j) => j !== i));
     setSelected(null);
+    setDirty(true);
+  };
+  const changeAnnClass = (i: number, labelId: string) => {
+    setAnns((a) => a.map((ann, j) => (j === i ? { ...ann, label_id: labelId } : ann)));
     setDirty(true);
   };
   const addClass = async () => {
@@ -306,7 +310,15 @@ export function EditorPage() {
               {labels.map((label, i) => (
                 <button
                   key={label.id}
-                  onClick={() => setActiveLabelId(label.id)}
+                  title={
+                    selected !== null
+                      ? "Assign this class to the selected annotation"
+                      : "Use this class for new annotations"
+                  }
+                  onClick={() => {
+                    setActiveLabelId(label.id);
+                    if (selected !== null) changeAnnClass(selected, label.id);
+                  }}
                   className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors ${
                     activeLabelId === label.id ? "bg-white/10" : "hover:bg-white/5"
                   }`}
@@ -359,12 +371,26 @@ export function EditorPage() {
                         selected === i ? "bg-white/10" : "hover:bg-white/5"
                       }`}
                     >
-                      <ClassChip
-                        idx={orderIndex.get(ann.label_id) ?? 0}
-                        name={label?.name ?? "?"}
-                        color={label?.color ?? "#888"}
-                        dark
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: label?.color ?? "#888" }}
                       />
+                      <select
+                        value={ann.label_id}
+                        title="Change class"
+                        onClick={(e) => e.stopPropagation()}
+                        onChange={(e) => {
+                          setSelected(i);
+                          changeAnnClass(i, e.target.value);
+                        }}
+                        className="max-w-28 cursor-pointer rounded bg-transparent font-mono text-[11px] text-studio-ink focus:outline-none [&>option]:bg-studio-panel"
+                      >
+                        {labels.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {orderIndex.get(l.id)} · {l.name}
+                          </option>
+                        ))}
+                      </select>
                       <span className="ml-auto font-mono text-[10px] text-studio-muted">
                         {ann.kind === "bbox" ? "box" : `poly·${ann.points.length / 2}`}
                       </span>
@@ -639,6 +665,13 @@ function Canvas({
                   points: [...ann.points],
                 };
               },
+              // In draw tools a plain click (no drag) still selects — drags keep drawing.
+              onClick: (e: React.MouseEvent) => {
+                if (tool !== "select" && polyDraft.length === 0) {
+                  e.stopPropagation();
+                  setSelected(i);
+                }
+              },
             };
             return (
               <g key={ann.id ?? `n${i}`}>
@@ -661,9 +694,8 @@ function Canvas({
                     {...common}
                   />
                 )}
-                {/* handles */}
+                {/* handles — usable from any tool; stopPropagation beats drawing */}
                 {isSel &&
-                  tool === "select" &&
                   (ann.kind === "bbox"
                     ? [0, 1, 2, 3].map((corner) => {
                         const [x, y, w, h] = ann.points;

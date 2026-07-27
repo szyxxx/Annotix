@@ -113,6 +113,11 @@ export const api = {
       `/api/images/${imageId}/autolabel`,
       json("POST", { user_id: userId }),
     ),
+  autolabelAll: (projectId: string, userId?: string) =>
+    request<{ queued: number }>(
+      `/api/projects/${projectId}/autolabel`,
+      json("POST", { user_id: userId }),
+    ),
 
   exportUrl: (projectId: string, format: "yolo" | "coco") =>
     `/api/projects/${projectId}/export?format=${format}`,

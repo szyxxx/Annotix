@@ -61,7 +61,9 @@ hairline borders, soft shadows, 150ms transitions.
 - `Mutex<Connection>` SQLite access — single-writer is plenty at MVP scale; pool later.
 - No thumbnails — browser scales originals; add server-side thumbs when grids feel slow.
 - Replace-all annotation save per image — no operational-transform merging; last save wins, WS broadcast keeps peers fresh.
-- Auto-label = pretrained COCO baseline — custom/finetuned model registry later.
+- Auto-label = open-vocabulary YOLOE prompted with the project's class list
+  (COCO baseline when the project has no classes yet); batch jobs run one
+  project at a time, sequentially. Custom/finetuned model registry later.
 
 ## Later roadmap
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ChevronLeft, Download, Plus, Shuffle, Trash2, Upload } from "lucide-react";
+import { ChevronLeft, Download, Plus, Shuffle, Sparkles, Trash2, Upload } from "lucide-react";
 import { api, type ImageItem, type Label, type Project } from "../lib/api";
 import { useSession } from "../lib/store";
 import { useProjectSocket } from "../lib/ws";
@@ -21,6 +21,8 @@ export function ProjectPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [tab, setTab] = useState<Tab>("images");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [autoProgress, setAutoProgress] = useState<{ done: number; total: number } | null>(null);
+  const [autoError, setAutoError] = useState("");
 
   const reload = useCallback(() => {
     if (projectId) api.getProject(projectId).then(setProject).catch(() => setProject(null));
@@ -31,6 +33,19 @@ export function ProjectPage() {
     if (ev.type === "images_added" || ev.type === "annotations_saved") {
       setRefreshKey((k) => k + 1);
       reload();
+    }
+    if (ev.type === "autolabel_progress") {
+      setAutoProgress({ done: ev.done as number, total: ev.total as number });
+      setRefreshKey((k) => k + 1);
+    }
+    if (ev.type === "autolabel_done") {
+      setAutoProgress(null);
+      setRefreshKey((k) => k + 1);
+      reload();
+    }
+    if (ev.type === "autolabel_error") {
+      setAutoProgress(null);
+      setAutoError(ev.message as string);
     }
   });
 
@@ -81,7 +96,14 @@ export function ProjectPage() {
         </div>
 
         {tab === "images" && (
-          <ImagesTab projectId={project.id} refreshKey={refreshKey} onChanged={reload} />
+          <ImagesTab
+            projectId={project.id}
+            refreshKey={refreshKey}
+            onChanged={reload}
+            autoProgress={autoProgress}
+            autoError={autoError}
+            onAutolabelStart={() => setAutoError("")}
+          />
         )}
         {tab === "classes" && <ClassesTab projectId={project.id} onChanged={reload} />}
         {tab === "export" && <ExportTab project={project} />}
@@ -103,11 +125,18 @@ function ImagesTab({
   projectId,
   refreshKey,
   onChanged,
+  autoProgress,
+  autoError,
+  onAutolabelStart,
 }: {
   projectId: string;
   refreshKey: number;
   onChanged: () => void;
+  autoProgress: { done: number; total: number } | null;
+  autoError: string;
+  onAutolabelStart: () => void;
 }) {
+  const user = useSession((s) => s.user);
   const navigate = useNavigate();
   const [images, setImages] = useState<ImageItem[] | null>(null);
   const [status, setStatus] = useState("all");
@@ -189,6 +218,26 @@ function ImagesTab({
         <Button variant="secondary" onClick={autoSplit} title="Reassign splits 70 / 20 / 10">
           <Shuffle size={14} /> Auto-split
         </Button>
+        <Button
+          variant="secondary"
+          disabled={!!autoProgress}
+          title="Auto-label every image that isn't human-annotated yet"
+          onClick={() => {
+            onAutolabelStart();
+            api.autolabelAll(projectId, user?.id ?? undefined).catch(() => {});
+          }}
+        >
+          {autoProgress ? (
+            <>
+              <Spinner /> Labeling {autoProgress.done}/{autoProgress.total}
+            </>
+          ) : (
+            <>
+              <Sparkles size={14} className="text-accent" /> Auto-label all
+            </>
+          )}
+        </Button>
+        {autoError && <span className="text-[12px] text-red-600">{autoError}</span>}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <Segmented
             options={[
@@ -293,13 +342,28 @@ function ImagesTab({
 // ---------- Classes ----------
 
 function ClassesTab({ projectId, onChanged }: { projectId: string; onChanged: () => void }) {
+  const user = useSession((s) => s.user);
   const [labels, setLabels] = useState<Label[] | null>(null);
   const [newName, setNewName] = useState("");
+  const [relabelQueued, setRelabelQueued] = useState(false);
+  const relabelTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const load = useCallback(() => {
     api.listLabels(projectId).then(setLabels);
   }, [projectId]);
   useEffect(load, [load]);
+
+  // Class list changed → re-run auto-label with the new list, debounced so a
+  // burst of edits triggers one job. Human-annotated images are never touched.
+  const queueRelabel = useCallback(() => {
+    setRelabelQueued(true);
+    clearTimeout(relabelTimer.current);
+    relabelTimer.current = setTimeout(() => {
+      setRelabelQueued(false);
+      api.autolabelAll(projectId, user?.id ?? undefined).catch(() => {});
+    }, 2500);
+  }, [projectId, user?.id]);
+  useEffect(() => () => clearTimeout(relabelTimer.current), []);
 
   const add = async () => {
     if (!newName.trim()) return;
@@ -307,10 +371,16 @@ function ClassesTab({ projectId, onChanged }: { projectId: string; onChanged: ()
     setNewName("");
     load();
     onChanged();
+    queueRelabel();
   };
 
   return (
     <div className="max-w-2xl">
+      <p className="mb-4 text-[13px] text-muted">
+        Auto-label is locked to this list: the model only looks for these classes. Editing the
+        list re-runs auto-label on images no one has annotated by hand.
+        {relabelQueued && <span className="text-accent"> Re-labeling shortly…</span>}
+      </p>
       <div className="mb-4 flex gap-2">
         <input
           value={newName}
@@ -329,7 +399,7 @@ function ClassesTab({ projectId, onChanged }: { projectId: string; onChanged: ()
       ) : labels.length === 0 ? (
         <EmptyState
           title="No classes yet"
-          hint="Classes are the categories your model will learn. Their order here is the YOLO class index in exports. Auto-label also creates classes for anything it finds."
+          hint="Classes are the categories your model will learn — their order is the YOLO class index in exports. Add them before auto-labeling to lock the model to exactly these classes; with none, auto-label bootstraps classes from whatever it finds."
         />
       ) : (
         <ul className="overflow-hidden rounded-xl border border-hairline bg-surface">
@@ -351,7 +421,9 @@ function ClassesTab({ projectId, onChanged }: { projectId: string; onChanged: ()
                 onBlur={(e) => {
                   const name = e.target.value.trim();
                   if (name && name !== label.name)
-                    api.patchLabel(label.id, { name }).then(() => (load(), onChanged()));
+                    api
+                      .patchLabel(label.id, { name })
+                      .then(() => (load(), onChanged(), queueRelabel()));
                 }}
                 className="flex-1 bg-transparent text-[14px] focus:outline-none"
               />
@@ -359,7 +431,7 @@ function ClassesTab({ projectId, onChanged }: { projectId: string; onChanged: ()
                 title="Delete class and its annotations"
                 onClick={() =>
                   confirm(`Delete class "${label.name}"? Its annotations are removed too.`) &&
-                  api.deleteLabel(label.id).then(() => (load(), onChanged()))
+                  api.deleteLabel(label.id).then(() => (load(), onChanged(), queueRelabel()))
                 }
                 className="text-faint opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
               >
