@@ -11,3 +11,5 @@ __pycache__/
 .env
 *.pt
 mobileclip*.ts
+docs/
+data/
