@@ -20,7 +20,7 @@ export function ProjectsPage() {
       <nav className="sticky top-0 z-40 border-b border-hairline bg-bg/80 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
           <span className="flex items-center gap-2 text-[15px] font-semibold tracking-tight">
-            <span className="font-mono text-accent">[ · ]</span> Annotix
+            <img src="/logo.png" alt="Annotix" className="h-5 w-auto" />
           </span>
           <span className="text-[13px] text-muted">{user?.name}</span>
         </div>

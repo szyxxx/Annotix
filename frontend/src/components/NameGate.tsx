@@ -28,8 +28,7 @@ export function NameGate({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen items-center justify-center bg-bg p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <span className="font-mono text-[13px] text-accent">[ · ]</span>
-          <h1 className="mt-3 text-[28px] font-semibold tracking-tight">Annotix</h1>
+          <img src="/logo.png" alt="Annotix Logo" className="h-10 w-auto mx-auto mb-4" />
           <p className="mt-1 text-[14px] text-muted">
             Label images. Train better models.
           </p>

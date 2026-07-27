@@ -1,6 +1,6 @@
 <div align="center">
 
-# `[ · ]` Annotix
+<img src=".github/assets/logo.png" alt="Annotix Logo" width="400" />
 
 **Open-source image annotation for YOLO — with auto-labeling built in.**
 
