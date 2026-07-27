@@ -13,6 +13,7 @@ or COCO. Self-hosted, one binary, no accounts to create.
 [![Rust](https://img.shields.io/badge/backend-Rust-orange.svg)](server)
 [![React](https://img.shields.io/badge/frontend-React%2019-61dafb.svg)](frontend)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Tako](https://img.shields.io/badge/Support_me-Tako-blue?style=flat)](https://tako.id/szyxxx)
 
 <img src=".github/assets/editor.png" alt="Annotix annotation editor with auto-labeled bounding boxes" width="900" />
 

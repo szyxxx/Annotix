@@ -47,6 +47,29 @@ CREATE TABLE IF NOT EXISTS annotations (
 CREATE INDEX IF NOT EXISTS idx_images_project ON images(project_id);
 CREATE INDEX IF NOT EXISTS idx_annotations_image ON annotations(image_id);
 CREATE INDEX IF NOT EXISTS idx_labels_project ON labels(project_id);
+
+CREATE TABLE IF NOT EXISTS training_jobs (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'running' CHECK (status IN ('running', 'completed', 'failed', 'stopped')),
+    current_epoch INTEGER NOT NULL DEFAULT 0,
+    max_epochs INTEGER NOT NULL,
+    metrics_json TEXT NOT NULL DEFAULT '{}',
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS model_versions (
+    id TEXT PRIMARY KEY,
+    project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    run_path TEXT NOT NULL,
+    weights_path TEXT NOT NULL,
+    confusion_matrix_path TEXT,
+    val_batch_path TEXT,
+    map50 REAL,
+    map50_95 REAL,
+    created_at INTEGER NOT NULL
+);
 ";
 
 pub fn open(path: &str) -> Connection {

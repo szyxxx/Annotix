@@ -1,1 +1,1 @@
-{"root":["./src/main.tsx","./src/components/namegate.tsx","./src/components/ui.tsx","./src/lib/api.ts","./src/lib/store.ts","./src/lib/ws.ts","./src/pages/editorpage.tsx","./src/pages/projectpage.tsx","./src/pages/projectspage.tsx"],"version":"5.8.3"}
+{"root":["./src/main.tsx","./src/components/modelsview.tsx","./src/components/namegate.tsx","./src/components/trainingwizard.tsx","./src/components/ui.tsx","./src/lib/api.ts","./src/lib/store.ts","./src/lib/ws.ts","./src/pages/editorpage.tsx","./src/pages/projectpage.tsx","./src/pages/projectspage.tsx"],"version":"5.8.3"}

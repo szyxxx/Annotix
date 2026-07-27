@@ -13,16 +13,21 @@ import {
   Spinner,
   inputClass,
 } from "../components/ui";
+import { ModelsView } from "../components/ModelsView";
 
-type Tab = "images" | "classes" | "export" | "settings";
+type Tab = "dataset" | "training" | "settings";
+type DatasetTab = "images" | "classes" | "export";
 
 export function ProjectPage() {
   const { projectId } = useParams();
   const [project, setProject] = useState<Project | null>(null);
-  const [tab, setTab] = useState<Tab>("images");
+  const [tab, setTab] = useState<Tab>("dataset");
+  const [datasetTab, setDatasetTab] = useState<DatasetTab>("images");
   const [refreshKey, setRefreshKey] = useState(0);
   const [autoProgress, setAutoProgress] = useState<{ done: number; total: number } | null>(null);
   const [autoError, setAutoError] = useState("");
+  
+  const [trainingJob, setTrainingJob] = useState<any>(null);
 
   const reload = useCallback(() => {
     if (projectId) api.getProject(projectId).then(setProject).catch(() => setProject(null));
@@ -46,6 +51,17 @@ export function ProjectPage() {
     if (ev.type === "autolabel_error") {
       setAutoProgress(null);
       setAutoError(ev.message as string);
+    }
+    if (ev.type === "training_progress") {
+      setTrainingJob({
+        job_id: ev.job_id,
+        status: ev.status,
+        current_epoch: ev.current_epoch,
+        metrics: ev.metrics
+      });
+      if (ev.status === "completed" || ev.status === "failed") {
+        setRefreshKey(k => k + 1);
+      }
     }
   });
 
@@ -82,9 +98,18 @@ export function ProjectPage() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
           <Segmented<Tab>
             options={[
-              { value: "images", label: `Images · ${project.image_count}` },
-              { value: "classes", label: `Classes · ${project.label_count}` },
-              { value: "export", label: "Export" },
+              { value: "dataset", label: "Dataset" },
+              { 
+                value: "training", 
+                label: (
+                  <div className="flex items-center gap-1.5">
+                    Training
+                    <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-accent">
+                      Beta
+                    </span>
+                  </div>
+                )
+              },
               { value: "settings", label: "Settings" },
             ]}
             value={tab}
@@ -95,18 +120,43 @@ export function ProjectPage() {
           </span>
         </div>
 
-        {tab === "images" && (
-          <ImagesTab
-            projectId={project.id}
-            refreshKey={refreshKey}
-            onChanged={reload}
-            autoProgress={autoProgress}
-            autoError={autoError}
-            onAutolabelStart={() => setAutoError("")}
+        {tab === "dataset" && (
+          <div className="flex flex-col gap-6">
+            <div className="flex">
+              <Segmented<DatasetTab>
+                options={[
+                  { value: "images", label: `Images · ${project.image_count}` },
+                  { value: "classes", label: `Classes · ${project.label_count}` },
+                  { value: "export", label: "Export Dataset" },
+                ]}
+                value={datasetTab}
+                onChange={setDatasetTab}
+              />
+            </div>
+            
+            {datasetTab === "images" && (
+              <ImagesTab
+                projectId={project.id}
+                refreshKey={refreshKey}
+                onChanged={reload}
+                autoProgress={autoProgress}
+                autoError={autoError}
+                onAutolabelStart={() => setAutoError("")}
+              />
+            )}
+            {datasetTab === "classes" && <ClassesTab projectId={project.id} onChanged={reload} />}
+            {datasetTab === "export" && <ExportTab project={project} />}
+          </div>
+        )}
+        
+        {tab === "training" && (
+          <ModelsView 
+            projectId={project.id} 
+            activeJob={trainingJob} 
+            onJobStarted={setTrainingJob} 
           />
         )}
-        {tab === "classes" && <ClassesTab projectId={project.id} onChanged={reload} />}
-        {tab === "export" && <ExportTab project={project} />}
+        
         {tab === "settings" && <SettingsTab project={project} onChanged={reload} />}
       </main>
     </div>

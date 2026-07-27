@@ -46,6 +46,28 @@ export interface Annotation {
   created_by?: string | null;
 }
 
+export interface TrainingJob {
+  id: string;
+  project_id: string;
+  status: string;
+  current_epoch: number;
+  max_epochs: number;
+  metrics_json: string;
+}
+
+export interface ModelVersion {
+  id: string;
+  project_id: string;
+  name: string;
+  run_path: string;
+  weights_path: string;
+  confusion_matrix_path?: string;
+  val_batch_path?: string;
+  map50?: number;
+  map50_95?: number;
+  created_at: number;
+}
+
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, init);
   if (!res.ok) {
@@ -121,4 +143,9 @@ export const api = {
 
   exportUrl: (projectId: string, format: "yolo" | "coco") =>
     `/api/projects/${projectId}/export?format=${format}`,
+
+  startTraining: (projectId: string, body: any) =>
+    request<TrainingJob>(`/api/projects/${projectId}/train`, json("POST", body)),
+  listModels: (projectId: string) =>
+    request<ModelVersion[]>(`/api/projects/${projectId}/models`),
 };

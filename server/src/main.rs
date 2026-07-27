@@ -3,6 +3,7 @@ mod autolabel;
 mod db;
 mod export;
 mod ws;
+mod training;
 
 use axum::extract::DefaultBodyLimit;
 use axum::routing::{get, post};
@@ -70,8 +71,12 @@ async fn main() {
         .route("/api/images/{id}/autolabel", post(autolabel::autolabel_image))
         .route("/api/projects/{id}/autolabel", post(autolabel::autolabel_project))
         .route("/api/projects/{id}/export", get(export::export_project))
+        .route("/api/projects/{id}/train", post(training::start_training))
+        .route("/api/projects/{id}/models", get(training::list_models))
+        .route("/api/internal/jobs/{id}/progress", post(training::job_progress))
         .route("/ws/projects/{id}", get(ws::ws_handler))
         .nest_service("/files", ServeDir::new(data_dir.join("uploads")))
+        .nest_service("/runs", ServeDir::new(data_dir.join("runs")))
         .layer(DefaultBodyLimit::max(1024 * 1024 * 1024))
         .layer(CorsLayer::permissive())
         .with_state(app);
