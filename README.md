@@ -15,7 +15,7 @@ or COCO. Self-hosted, one binary, no accounts to create.
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 <br/>
 <br/>
-<a href="https://trakteer.id/szyxxx" target="_blank"><img id="wse-buttons-preview" src="https://edge-cdn.trakteer.id/images/embed/trbtn-black-1.png?v=14-05-2025" height="40" style="border:0px;height:40px;" alt="Support Me"></a>
+<a href="https://trakteer.id/szyxxx/tip" target="_blank"><img id="wse-buttons-preview" src="https://edge-cdn.trakteer.id/images/embed/trbtn-black-1.png?v=14-05-2025" height="40" style="border:0px;height:40px;" alt="Support Me"></a>
 
 <img src=".github/assets/editor.png" alt="Annotix annotation editor with auto-labeled bounding boxes" width="900" />
 
